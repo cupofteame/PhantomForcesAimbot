@@ -1,6 +1,6 @@
-# Phantom Forces Vision Assistant
+# Phantom Forces CV
 
-A computer vision-based assistance tool for Phantom Forces with a configurable GUI interface.
+A computer vision-based tool for Phantom Forces with a GUI interface.
 
 ## Features
 
@@ -61,7 +61,6 @@ The tool includes a GUI configuration panel with the following sections:
 
 ### Keybinds
 Default keybinds:
-- Exit: '6' key (configurable)
 - Aim: Right Mouse Button (configurable)
 
 ## File Structure
