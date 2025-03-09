@@ -3,8 +3,4 @@ opencv-python==4.8.0.76
 mss==9.0.1
 pywin32==306
 keyboard==0.13.5
-tkinter  # Usually comes with Python
-json  # Built-in with Python
-threading  # Built-in with Python
-time  # Built-in with Python
-os  # Built-in with Python 
+pyinstaller==6.3.0

@@ -26,6 +26,24 @@ A computer vision-based assistance tool for Phantom Forces with a configurable G
 pip install -r requirements.txt
 ```
 
+## Building Executable
+
+You can build a standalone executable using one of these methods:
+
+### Method 1: Using build script
+1. Run the build script:
+```bash
+python build.py
+```
+2. Find the executable in the `dist` folder
+
+### Method 2: Manual PyInstaller command
+```bash
+pyinstaller --onefile --noconsole --name=PhantomForcesAssist --add-data "src/enemyIndic3.png;." src/phantomforcesaim.py
+```
+
+The executable will be created in the `dist` folder.
+
 ## Configuration
 
 The tool includes a GUI configuration panel with the following sections:
@@ -53,17 +71,20 @@ Default keybinds:
 │   ├── phantomforcesaim.py  # Main logic
 │   ├── config.py            # Configuration management
 │   └── ui.py               # GUI interface
+├── build.py                # Build script for executable
 ├── requirements.txt
 └── README.md
 ```
 
 ## Usage
 
-1. Run the main script:
+### Running from Source
 ```bash
 python src/phantomforcesaim.py
 ```
 
+### Running Executable
+1. Double-click the executable in the `dist` folder
 2. Use the GUI to configure settings
 3. Use configured keybinds to control the tool
 
@@ -76,6 +97,7 @@ Settings are stored in `aimbot_config.json` and can be modified through the GUI 
 - Ensure you have the correct screen resolution set
 - Adjust sensitivity settings to match your in-game configuration
 - The tool requires template images for vision processing
+- When running the executable, make sure to run it as administrator
 
 ## Dependencies
 
@@ -85,6 +107,7 @@ Settings are stored in `aimbot_config.json` and can be modified through the GUI 
 - pywin32: Windows API interface
 - keyboard: Key event handling
 - tkinter: GUI framework (included with Python)
+- pyinstaller: For creating executable
 
 ## Development
 

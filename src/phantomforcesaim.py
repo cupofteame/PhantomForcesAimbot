@@ -12,9 +12,30 @@ import threading
 from config import CONFIG
 from ui import ConfigUI
 import sys
+import os
+
+def get_executable_dir():
+    """Get the directory where the executable/script is located"""
+    if getattr(sys, 'frozen', False):
+        # Running as compiled executable
+        return os.path.dirname(sys.executable)
+    else:
+        # Running as script
+        return os.path.dirname(os.path.abspath(__file__))
 
 # Load template and create scaled versions for multi-scale matching
-template = cv2.imread("enemyIndic3.png", cv2.IMREAD_UNCHANGED)
+template_path = os.path.join(get_executable_dir(), "enemyIndic3.png")
+if not os.path.exists(template_path):
+    print(f"Error: Template image not found at {template_path}")
+    print("Please make sure 'enemyIndic3.png' is in the same folder as the executable.")
+    sys.exit(1)
+
+template = cv2.imread(template_path, cv2.IMREAD_UNCHANGED)
+if template is None:
+    print(f"Error: Could not load template image from {template_path}")
+    print("The image file might be corrupted. Please ensure it's a valid image file.")
+    sys.exit(1)
+
 template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 w, h = template_gray.shape[::-1]
 

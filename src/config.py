@@ -1,5 +1,15 @@
 import json
 import os
+import sys
+
+def get_executable_dir():
+    """Get the directory where the executable/script is located"""
+    if getattr(sys, 'frozen', False):
+        # Running as compiled executable
+        return os.path.dirname(sys.executable)
+    else:
+        # Running as script
+        return os.path.dirname(os.path.abspath(__file__))
 
 DEFAULT_CONFIG = {
     # Screen settings
@@ -34,7 +44,21 @@ DEFAULT_CONFIG = {
 
 class Configuration:
     def __init__(self):
-        self.config_file = "aimbot_config.json"
+        # Always use executable directory for config
+        exe_dir = get_executable_dir()
+        self.config_file = os.path.join(exe_dir, "aimbot_config.json")
+        
+        # Create default config if it doesn't exist
+        if not os.path.exists(self.config_file):
+            print("Creating default configuration file...")
+            try:
+                with open(self.config_file, 'w') as f:
+                    json.dump(DEFAULT_CONFIG, f, indent=4)
+                print(f"Default configuration created at: {self.config_file}")
+            except Exception as e:
+                print(f"Warning: Could not create config file: {e}")
+                print("Make sure the program has write permissions in its directory.")
+        
         self.load_config()
         self._calculate_derived_values()
     
@@ -43,14 +67,15 @@ class Configuration:
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r') as f:
                     loaded_config = json.load(f)
-                    # Update default config with loaded values
+                    # Start with default config and update with saved values
                     self.config = DEFAULT_CONFIG.copy()
                     self.config.update(loaded_config)
             else:
+                print("Using default configuration...")
                 self.config = DEFAULT_CONFIG.copy()
-                self.save_config()
         except Exception as e:
             print(f"Error loading config: {e}")
+            print("Using default configuration...")
             self.config = DEFAULT_CONFIG.copy()
     
     def save_config(self):
@@ -59,6 +84,7 @@ class Configuration:
                 json.dump(self.config, f, indent=4)
         except Exception as e:
             print(f"Error saving config: {e}")
+            print("Make sure the program has write permissions in its directory.")
     
     def _calculate_derived_values(self):
         # Screen calculations

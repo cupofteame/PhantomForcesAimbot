@@ -1,2 +1,5 @@
 src/__pycache__
 src/aimbot_config.json
+build/
+dist/
+PhantomForcesAssist.spec
