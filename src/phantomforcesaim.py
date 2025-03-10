@@ -63,27 +63,22 @@ target_positions = deque(maxlen=5)  # Store up to 5 positions for prediction
 last_time = time.time()
 last_mouse_move = (0, 0)  # Store last mouse movement for smoothing
 
-# Smoothing settings
-SMOOTHING_FACTOR = 0.6  # Higher = smoother but more latency
-ACCELERATION_CAP = 10  # Limits sudden movements
-MIN_MOVEMENT_THRESHOLD = 1  # Minimum pixels to move
-
 def apply_smoothing(current_move, last_move):
     """Apply smoothing to mouse movement"""
     # Blend with previous movement
-    smoothed_x = current_move[0] * (1 - SMOOTHING_FACTOR) + last_move[0] * SMOOTHING_FACTOR
-    smoothed_y = current_move[1] * (1 - SMOOTHING_FACTOR) + last_move[1] * SMOOTHING_FACTOR
+    smoothed_x = current_move[0] * (1 - CONFIG.config["smoothing_factor"]) + last_move[0] * CONFIG.config["smoothing_factor"]
+    smoothed_y = current_move[1] * (1 - CONFIG.config["smoothing_factor"]) + last_move[1] * CONFIG.config["smoothing_factor"]
     
     # Apply acceleration dampening
-    if abs(smoothed_x) > ACCELERATION_CAP:
-        smoothed_x = ACCELERATION_CAP if smoothed_x > 0 else -ACCELERATION_CAP
-    if abs(smoothed_y) > ACCELERATION_CAP:
-        smoothed_y = ACCELERATION_CAP if smoothed_y > 0 else -ACCELERATION_CAP
+    if abs(smoothed_x) > CONFIG.config["acceleration_cap"]:
+        smoothed_x = CONFIG.config["acceleration_cap"] if smoothed_x > 0 else -CONFIG.config["acceleration_cap"]
+    if abs(smoothed_y) > CONFIG.config["acceleration_cap"]:
+        smoothed_y = CONFIG.config["acceleration_cap"] if smoothed_y > 0 else -CONFIG.config["acceleration_cap"]
     
     # Don't move if movement is too small (reduces jitter)
-    if abs(smoothed_x) < MIN_MOVEMENT_THRESHOLD:
+    if abs(smoothed_x) < CONFIG.config["min_movement_threshold"]:
         smoothed_x = 0
-    if abs(smoothed_y) < MIN_MOVEMENT_THRESHOLD:
+    if abs(smoothed_y) < CONFIG.config["min_movement_threshold"]:
         smoothed_y = 0
         
     return (smoothed_x, smoothed_y)
