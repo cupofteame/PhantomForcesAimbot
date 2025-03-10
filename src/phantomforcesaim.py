@@ -60,12 +60,44 @@ centerH = h//2
 # Target prediction variables
 target_positions = deque(maxlen=5)  # Store up to 5 positions for prediction
 last_time = time.time()
+last_mouse_move = (0, 0)  # Store last mouse movement for smoothing
 
-# Performance optimization
-last_frame_time = 0
+# Smoothing settings
+SMOOTHING_FACTOR = 0.6  # Higher = smoother but more latency
+ACCELERATION_CAP = 10  # Limits sudden movements
+MIN_MOVEMENT_THRESHOLD = 1  # Minimum pixels to move
 
-# Consecutive matches required before shooting (reduces false positives)
-consecutive_matches = 0
+def apply_smoothing(current_move, last_move):
+    """Apply smoothing to mouse movement"""
+    # Blend with previous movement
+    smoothed_x = current_move[0] * (1 - SMOOTHING_FACTOR) + last_move[0] * SMOOTHING_FACTOR
+    smoothed_y = current_move[1] * (1 - SMOOTHING_FACTOR) + last_move[1] * SMOOTHING_FACTOR
+    
+    # Apply acceleration dampening
+    if abs(smoothed_x) > ACCELERATION_CAP:
+        smoothed_x = ACCELERATION_CAP if smoothed_x > 0 else -ACCELERATION_CAP
+    if abs(smoothed_y) > ACCELERATION_CAP:
+        smoothed_y = ACCELERATION_CAP if smoothed_y > 0 else -ACCELERATION_CAP
+    
+    # Don't move if movement is too small (reduces jitter)
+    if abs(smoothed_x) < MIN_MOVEMENT_THRESHOLD:
+        smoothed_x = 0
+    if abs(smoothed_y) < MIN_MOVEMENT_THRESHOLD:
+        smoothed_y = 0
+        
+    return (smoothed_x, smoothed_y)
+
+def calculate_dynamic_sensitivity(distance):
+    """Calculate sensitivity based on distance to target"""
+    base_sens = CONFIG.final_sensitivity
+    
+    # Reduce sensitivity when very close to target
+    if distance < 10:
+        return base_sens * 0.5
+    elif distance < 30:
+        return base_sens * 0.7
+    else:
+        return base_sens
 
 def multi_scale_template_match(frame, templates, scale_factors):
     """Perform template matching at multiple scales and return the best match"""
@@ -181,7 +213,7 @@ def predict_target_position(positions, time_delta):
     return (pred_x, pred_y)
 
 def aimbot_loop(ui):
-    global last_time, consecutive_matches
+    global last_time, consecutive_matches, last_mouse_move
     screenCapture = mss.mss()
     
     while not ui.should_exit:
@@ -221,22 +253,35 @@ def aimbot_loop(ui):
                         X = int(X * blend_factor + predicted_pos[0] * (1 - blend_factor))
                         Y = int(Y * blend_factor + predicted_pos[1] * (1 - blend_factor))
                 
-                # Calculate mouse movement
+                # Calculate distance to target
                 crosshairU = CONFIG.config["capture_size"] // 2
-                nX = (-(crosshairU - X)) * CONFIG.final_sensitivity
-                nY = (-(crosshairU - Y)) * CONFIG.final_sensitivity
+                deltaX = crosshairU - X
+                deltaY = crosshairU - Y
+                distance = (deltaX ** 2 + deltaY ** 2) ** 0.5
+                
+                # Calculate mouse movement with dynamic sensitivity
+                dynamic_sens = calculate_dynamic_sensitivity(distance)
+                nX = (-deltaX) * dynamic_sens
+                nY = (-deltaY) * dynamic_sens
+                
+                # Apply smoothing
+                current_move = (nX, nY)
+                smoothed_move = apply_smoothing(current_move, last_mouse_move)
+                last_mouse_move = smoothed_move
                 
                 # Apply mouse movement
-                win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(nX), int(nY), 0, 0)
+                win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(smoothed_move[0]), int(smoothed_move[1]), 0, 0)
                 
-                # Handle auto-shoot
+                # Handle auto-shoot with improved timing
                 consecutive_matches += 1
                 if CONFIG.config["auto_shoot_enabled"] and consecutive_matches >= CONFIG.config["min_consecutive_matches"]:
-                    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-                    time.sleep(0.1)
-                    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                    if distance < 20:  # Only shoot when close enough to target
+                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                        time.sleep(0.1)
+                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
             else:
                 consecutive_matches = 0
+                last_mouse_move = (0, 0)  # Reset smoothing when target is lost
     
     # Clean up
     screenCapture.close()
