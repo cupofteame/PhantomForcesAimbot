@@ -25,6 +25,7 @@ def build_exe():
         '--hidden-import=win32api',
         '--hidden-import=win32con',
         '--hidden-import=win32gui',
+        '--hidden-import=requests',
         '--clean',  # Clean PyInstaller cache
         '--uac-admin',  # Request admin privileges
     ])
@@ -32,7 +33,7 @@ def build_exe():
     print("Build completed! Executable is in the dist folder.")
     print("\nNOTE: When distributing the executable:")
     print("1. The config file will be created automatically on first run")
-    print("2. Make sure to keep enemyIndic3.png in the same folder as the executable")
+    print("2. The template image will be downloaded automatically on first run")
     print("3. Run the executable as administrator for proper functionality")
 
 if __name__ == "__main__":
