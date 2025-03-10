@@ -47,15 +47,50 @@ class ConfigUI:
     
     def apply_theme(self):
         if CONFIG.config["theme"] == "dark":
-            self.root.configure(bg='#2b2b2b')
-            self.style.configure("TFrame", background='#2b2b2b')
-            self.style.configure("TLabel", background='#2b2b2b', foreground='white')
-            self.style.configure("TButton", background='#404040', foreground='white')
+            # Configure dark theme colors
+            bg_color = '#2b2b2b'
+            fg_color = 'white'
+            entry_bg = '#333333'
+            button_bg = '#404040'
+            
+            self.root.configure(bg=bg_color)
+            self.style.configure("TFrame", background=bg_color)
+            self.style.configure("Dark.TFrame", background=bg_color)
+            self.style.configure("TLabel", background=bg_color, foreground=fg_color)
+            self.style.configure("TButton", background=button_bg, foreground=fg_color)
+            self.style.configure("TCheckbutton", background=bg_color, foreground=fg_color)
+            self.style.configure("TNotebook", background=bg_color, foreground=fg_color)
+            self.style.configure("TNotebook.Tab", background=button_bg, foreground=fg_color)
+            
+            # Configure Entry widget colors
+            self.root.option_add("*Entry.Background", entry_bg)
+            self.root.option_add("*Entry.Foreground", fg_color)
+            
+            # Configure Canvas default background
+            self.root.option_add("*Canvas.Background", bg_color)
+            
         else:
-            self.root.configure(bg='#f0f0f0')
-            self.style.configure("TFrame", background='#f0f0f0')
-            self.style.configure("TLabel", background='#f0f0f0', foreground='black')
-            self.style.configure("TButton", background='#e0e0e0', foreground='black')
+            # Configure light theme colors
+            bg_color = '#f0f0f0'
+            fg_color = 'black'
+            entry_bg = 'white'
+            button_bg = '#e0e0e0'
+            
+            self.root.configure(bg=bg_color)
+            self.style.configure("TFrame", background=bg_color)
+            self.style.configure("Light.TFrame", background=bg_color)
+            self.style.configure("TLabel", background=bg_color, foreground=fg_color)
+            self.style.configure("TButton", background=button_bg, foreground=fg_color)
+            self.style.configure("TCheckbutton", background=bg_color, foreground=fg_color)
+            self.style.configure("TNotebook", background=bg_color, foreground=fg_color)
+            self.style.configure("TNotebook.Tab", background=button_bg, foreground=fg_color)
+            
+            # Configure Entry widget colors
+            self.root.option_add("*Entry.Background", entry_bg)
+            self.root.option_add("*Entry.Foreground", fg_color)
+            
+            # Configure Canvas default background
+            self.root.option_add("*Canvas.Background", bg_color)
     
     def create_sensitivity_tab(self):
         sens_frame = ttk.Frame(self.notebook)
@@ -108,28 +143,82 @@ class ConfigUI:
         aim_frame = ttk.Frame(self.notebook)
         self.notebook.add(aim_frame, text='Aimbot')
         
+        # Create a canvas and scrollbar for scrolling
+        canvas = tk.Canvas(aim_frame, bg='#2b2b2b' if CONFIG.config["theme"] == "dark" else '#f0f0f0')
+        scrollbar = ttk.Scrollbar(aim_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas, style='Dark.TFrame' if CONFIG.config["theme"] == "dark" else 'Light.TFrame')
+
+        # Configure canvas background
+        if CONFIG.config["theme"] == "dark":
+            canvas.configure(bg='#2b2b2b')
+        else:
+            canvas.configure(bg='#f0f0f0')
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        # Create the scrolled window with proper width
+        canvas_frame = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw", width=580)  # Fixed width slightly less than window width
+
+        # Configure scrolling
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Bind canvas resize to update inner frame width
+        def on_canvas_configure(e):
+            canvas.itemconfig(canvas_frame, width=e.width - 20)  # Leave space for scrollbar
+        canvas.bind('<Configure>', on_canvas_configure)
+
+        # Create a container frame for content with padding
+        content_frame = ttk.Frame(scrollable_frame, style='Dark.TFrame' if CONFIG.config["theme"] == "dark" else 'Light.TFrame')
+        content_frame.pack(fill='both', expand=True, padx=10, pady=5)
+        
         # Auto Shoot
         auto_shoot_var = tk.BooleanVar(value=CONFIG.config["auto_shoot_enabled"])
-        auto_shoot = ttk.Checkbutton(aim_frame, text="Auto Shoot Enabled",
+        auto_shoot = ttk.Checkbutton(content_frame, text="Auto Shoot Enabled",
                                    variable=auto_shoot_var,
                                    command=lambda: self.update_config("auto_shoot_enabled", auto_shoot_var.get()))
         auto_shoot.pack(pady=10)
         
         # Match Threshold
-        ttk.Label(aim_frame, text="Match Threshold:").pack(pady=5)
-        match_threshold = ttk.Entry(aim_frame)
+        ttk.Label(content_frame, text="Match Threshold:").pack(pady=5)
+        match_threshold = ttk.Entry(content_frame)
         match_threshold.insert(0, str(CONFIG.config["match_threshold"]))
         match_threshold.pack(pady=5)
+
+        # Smoothing Settings Section
+        ttk.Label(content_frame, text="Smoothing Settings", font=('TkDefaultFont', 10, 'bold')).pack(pady=10)
         
-        # Prediction Settings
+        # Smoothing Factor
+        ttk.Label(content_frame, text="Smoothing Factor (0.0-1.0):").pack(pady=5)
+        smoothing_factor = ttk.Entry(content_frame)
+        smoothing_factor.insert(0, str(CONFIG.config["smoothing_factor"]))
+        smoothing_factor.pack(pady=5)
+        
+        # Acceleration Cap
+        ttk.Label(content_frame, text="Acceleration Cap:").pack(pady=5)
+        acceleration_cap = ttk.Entry(content_frame)
+        acceleration_cap.insert(0, str(CONFIG.config["acceleration_cap"]))
+        acceleration_cap.pack(pady=5)
+        
+        # Min Movement Threshold
+        ttk.Label(content_frame, text="Minimum Movement Threshold:").pack(pady=5)
+        min_movement = ttk.Entry(content_frame)
+        min_movement.insert(0, str(CONFIG.config["min_movement_threshold"]))
+        min_movement.pack(pady=5)
+        
+        # Prediction Settings Section
+        ttk.Label(content_frame, text="Prediction Settings", font=('TkDefaultFont', 10, 'bold')).pack(pady=10)
+        
         pred_var = tk.BooleanVar(value=CONFIG.config["prediction_enabled"])
-        prediction = ttk.Checkbutton(aim_frame, text="Prediction Enabled",
+        prediction = ttk.Checkbutton(content_frame, text="Prediction Enabled",
                                    variable=pred_var,
                                    command=lambda: self.update_config("prediction_enabled", pred_var.get()))
         prediction.pack(pady=10)
         
-        ttk.Label(aim_frame, text="Prediction Strength:").pack(pady=5)
-        pred_strength = ttk.Entry(aim_frame)
+        ttk.Label(content_frame, text="Prediction Strength:").pack(pady=5)
+        pred_strength = ttk.Entry(content_frame)
         pred_strength.insert(0, str(CONFIG.config["prediction_strength"]))
         pred_strength.pack(pady=5)
         
@@ -138,20 +227,36 @@ class ConfigUI:
             try:
                 threshold = float(match_threshold.get())
                 strength = float(pred_strength.get())
+                smooth = float(smoothing_factor.get())
+                accel = float(acceleration_cap.get())
+                min_move = float(min_movement.get())
                 
                 if not (0 <= threshold <= 1):
                     raise ValueError("Match threshold must be between 0 and 1")
                 if not (0 <= strength <= 1):
                     raise ValueError("Prediction strength must be between 0 and 1")
+                if not (0 <= smooth <= 1):
+                    raise ValueError("Smoothing factor must be between 0 and 1")
+                if accel <= 0:
+                    raise ValueError("Acceleration cap must be positive")
+                if min_move < 0:
+                    raise ValueError("Minimum movement threshold cannot be negative")
                 
                 self.update_config("match_threshold", threshold)
                 self.update_config("prediction_strength", strength)
+                self.update_config("smoothing_factor", smooth)
+                self.update_config("acceleration_cap", accel)
+                self.update_config("min_movement_threshold", min_move)
                 
                 self.status_var.set("Aimbot settings updated successfully")
             except ValueError as e:
                 messagebox.showerror("Error", str(e))
         
-        ttk.Button(aim_frame, text="Apply", command=apply_aimbot).pack(pady=20)
+        ttk.Button(content_frame, text="Apply", command=apply_aimbot).pack(pady=20)
+
+        # Pack the canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+        scrollbar.pack(side="right", fill="y")
     
     def create_screen_tab(self):
         screen_frame = ttk.Frame(self.notebook)

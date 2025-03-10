@@ -28,6 +28,11 @@ DEFAULT_CONFIG = {
     "match_threshold": 0.85,
     "min_consecutive_matches": 2,
     
+    # Smoothing settings
+    "smoothing_factor": 0.6,
+    "acceleration_cap": 10,
+    "min_movement_threshold": 1,
+    
     # Prediction settings
     "prediction_enabled": True,
     "prediction_strength": 0.5,
